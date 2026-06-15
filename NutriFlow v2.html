@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>NutriFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f14; --surface:#18181f; --surface2:#22222c; --surface3:#2a2a38;
+  --accent:#6c63ff; --accent2:#a78bfa; --green:#34d399; --blue:#38bdf8;
+  --orange:#fb923c; --red:#f87171; --text:#f0f0f5; --text2:#a0a0b0;
+  --text3:#606070; --border:#2a2a3a; --r:16px; --rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none}
+.s-logo{width:80px;height:80px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:36px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 40px rgba(108,99,255,.4)}50%{box-shadow:0 0 60px rgba(108,99,255,.7)}}
+.s-title{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700}
+.s-sub{font-size:14px;color:var(--text2)}
+.s-bar{width:160px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.s-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:ld 1.8s ease forwards}
+@keyframes ld{to{width:100%}}
+
+/* SHELL */
+#app{display:none;flex-direction:column;min-height:100dvh}
+#app.v{display:flex}
+
+/* HEADER */
+.hdr{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border)}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.hdr-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700}
+.hdr-date{font-size:12px;color:var(--text2)}
+.icon-btn{width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background .2s}
+.icon-btn:hover{background:var(--surface2)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:16px 14px 100px}
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 env(safe-area-inset-bottom,8px);z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;cursor:pointer;border:none;background:none;color:var(--text3);transition:color .2s}
+.nav-item.active{color:var(--accent2)}
+.nav-item.active .nav-icon{background:rgba(108,99,255,.15)}
+.nav-icon{width:44px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;transition:background .2s}
+.nav-label{font-size:10px;font-weight:500}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px}
+
+/* CALORIE RING */
+.cal-hero{display:flex;flex-direction:column;align-items:center;padding:20px}
+.ring-wrap{position:relative;width:170px;height:170px}
+.ring-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--surface3);stroke-width:10}
+.ring-fg{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;line-height:1}
+.ring-lbl{font-size:11px;color:var(--text2);margin-top:3px}
+.ring-rem{font-size:10px;color:var(--text3);margin-top:2px}
+
+.macro-row{display:flex;gap:8px;margin-top:14px;width:100%}
+.macro-chip{flex:1;background:var(--surface2);border-radius:var(--rs);padding:9px 6px;text-align:center}
+.macro-val{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600}
+.macro-key{font-size:10px;color:var(--text2);margin-top:2px}
+.macro-bar{height:3px;border-radius:2px;margin-top:5px;background:var(--surface3);overflow:hidden}
+.macro-fill{height:100%;border-radius:2px;transition:width .8s ease}
+
+/* WATER */
+.water-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.water-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.water-left{display:flex;align-items:center;gap:8px}
+.water-amt{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700}
+.water-goal-txt{font-size:11px;color:var(--text2)}
+.water-glasses{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.wg{width:34px;height:34px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s;background:var(--surface2)}
+.wg.on{background:rgba(56,189,248,.15);border-color:var(--blue)}
+.water-track{background:var(--surface3);border-radius:4px;height:5px;overflow:hidden}
+.water-fill{height:100%;background:linear-gradient(90deg,var(--blue),#7dd3fc);border-radius:4px;transition:width .6s ease}
+
+/* FOOD LOG */
+.food-log-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.food-log-title{font-size:14px;font-weight:600}
+.food-log-total{font-size:13px;color:var(--accent2);font-weight:600}
+.food-item{background:var(--surface2);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.food-item-left .food-name{font-size:14px;font-weight:500}
+.food-item-left .food-macros{font-size:11px;color:var(--text2);margin-top:2px}
+.food-item-right{display:flex;align-items:center;gap:8px}
+.food-cal{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--accent2)}
+.del-btn{font-size:14px;color:var(--text3);cursor:pointer;padding:4px}
+.del-btn:hover{color:var(--red)}
+.add-food-row{display:flex;gap:8px;margin-top:8px}
+.add-food-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.add-food-input:focus{border-color:var(--accent)}
+.add-food-input::placeholder{color:var(--text3)}
+.add-btn-grp{display:flex;gap:6px}
+.quick-btn{padding:10px 12px;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;white-space:nowrap}
+.quick-btn:hover{opacity:.85}
+.btn-ai{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.btn-manual{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.empty-log{text-align:center;padding:28px;color:var(--text3);font-size:13px}
+
+/* MANUAL QUICK ENTRY */
+.manual-entry{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:12px;margin-top:8px;display:none}
+.manual-entry.open{display:block}
+.manual-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.manual-grid.four{grid-template-columns:1fr 1fr 1fr 1fr}
+.m-input{width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.m-input:focus{border-color:var(--accent)}
+.m-label{font-size:10px;color:var(--text2);margin-bottom:3px}
+.m-btns{display:flex;gap:6px}
+.m-confirm{flex:2;padding:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.m-cancel{flex:1;padding:9px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* AI LOADING */
+.ai-loading{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface2);border-radius:var(--rs);margin-bottom:6px;font-size:13px;color:var(--text2)}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--text2);display:inline-block;animation:blink 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* AI RESULT IN LOG */
+.ai-result-inline{background:var(--surface3);border:1px solid var(--accent);border-radius:var(--rs);padding:12px;margin-bottom:6px}
+.ai-res-name{font-weight:600;font-size:13px;margin-bottom:8px;color:var(--accent2)}
+.ai-res-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
+.ai-res-cell{background:var(--surface);border-radius:7px;padding:6px;text-align:center}
+.ai-res-val{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600}
+.ai-res-key{font-size:9px;color:var(--text2);margin-top:1px}
+.ai-res-note{font-size:11px;color:var(--text2);margin-bottom:8px}
+.ai-res-btns{display:flex;gap:6px}
+.ai-res-btn{flex:1;padding:8px;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.ai-res-btn.add{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.ai-res-btn.fav{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.ai-res-btn.disc{background:var(--surface2);color:var(--red);border:1px solid var(--border)}
+
+/* FAVS */
+.fav-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.fav-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.fav-chip:hover{border-color:var(--accent);color:var(--accent2)}
+.fav-chip .fav-cal{color:var(--text3);font-size:11px}
+
+/* WEIGHT */
+.w-input-row{display:flex;gap:8px;margin-bottom:14px}
+.w-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 14px;color:var(--text);font-size:16px;font-family:'Inter',sans-serif;outline:none}
+.w-input:focus{border-color:var(--accent)}
+.prim-btn{padding:10px 16px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--rs);color:white;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
+.w-entry{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:var(--rs);padding:10px 14px;margin-bottom:5px}
+.w-val{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600}
+.w-date{font-size:11px;color:var(--text2)}
+.w-delta{font-size:12px;font-weight:600}
+.chart-wrap{width:100%;height:155px;position:relative;margin-top:6px}
+
+/* SETTINGS */
+.set-section{margin-bottom:18px}
+.set-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px;padding:0 2px}
+.set-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);display:flex;align-items:center;justify-content:space-between;padding:13px 14px;margin-bottom:2px}
+.set-row-lbl{font-size:14px}
+.set-inp{background:transparent;border:none;outline:none;color:var(--accent2);font-size:14px;font-weight:500;text-align:right;width:90px;font-family:'Inter',sans-serif}
+.set-sel{background:var(--surface);border:none;outline:none;color:var(--accent2);font-size:14px;font-weight:500;text-align:right;font-family:'Inter',sans-serif}
+
+/* WEEKLY */
+.week-grid{display:flex;gap:5px;margin-bottom:14px}
+.wday{flex:1;background:var(--surface2);border-radius:10px;padding:7px 3px;text-align:center}
+.wday.today{background:rgba(108,99,255,.2);border:1px solid var(--accent)}
+.wday-name{font-size:9px;color:var(--text2)}
+.wday-cal{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;margin-top:3px}
+.wday-bar{height:38px;background:var(--surface3);border-radius:4px;margin-top:5px;overflow:hidden;display:flex;align-items:flex-end}
+.wday-fill{width:100%;border-radius:4px;transition:height .6s ease}
+
+/* STAT ROW */
+.stat-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{font-size:13px;color:var(--text2)}
+.stat-val{font-size:13px;font-weight:600}
+.sec-div{height:1px;background:var(--border);margin:12px 0}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-ov.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:24px 24px 0 0;padding:18px 18px env(safe-area-inset-bottom,18px);width:100%;max-width:500px;transform:translateY(100%);transition:transform .3s ease}
+.modal-ov.open .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;margin-bottom:14px}
+.mf{margin-bottom:10px}
+.mf label{font-size:11px;color:var(--text2);margin-bottom:5px;display:block}
+.m-inp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:11px 13px;color:var(--text);font-size:15px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.m-inp:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-cancel{flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.modal-confirm{flex:2;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--rs);color:white;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);color:var(--text);padding:9px 18px;border-radius:24px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:2000;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="s-logo">🌊</div>
+  <div class="s-title">NutriFlow</div>
+  <div class="s-sub">Tvoj AI zdravstveni suputnik</div>
+  <div class="s-bar"><div class="s-fill"></div></div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-logo">
+      <div class="hdr-icon">🌊</div>
+      <div>
+        <div class="hdr-title">NutriFlow</div>
+        <div class="hdr-date" id="hdrDate"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <div class="icon-btn" onclick="showPage('weekly')">📊</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+
+      <!-- Calorie ring -->
+      <div class="card cal-hero">
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 170 170">
+            <circle class="ring-bg" cx="85" cy="85" r="70"/>
+            <circle class="ring-fg" cx="85" cy="85" r="70" id="calRing"
+              stroke="url(#rg)" stroke-dasharray="440" stroke-dashoffset="440"/>
+            <defs>
+              <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#6c63ff"/>
+                <stop offset="100%" stop-color="#a78bfa"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num" id="ringNum">0</div>
+            <div class="ring-lbl">kcal danas</div>
+            <div class="ring-rem" id="ringRem">ostalo: 0 kcal</div>
+          </div>
+        </div>
+        <div class="macro-row">
+          <div class="macro-chip">
+            <div class="macro-val" id="mP" style="color:#34d399">0g</div>
+            <div class="macro-key">Proteini</div>
+            <div class="macro-bar"><div class="macro-fill" id="mPb" style="background:#34d399;width:0%"></div></div>
+          </div>
+          <div class="macro-chip">
+            <div class="macro-val" id="mC" style="color:#38bdf8">0g</div>
+            <div class="macro-key">Ugljikohidrati</div>
+            <div class="macro-bar"><div class="macro-fill" id="mCb" style="background:#38bdf8;width:0%"></div></div>
+          </div>
+          <div class="macro-chip">
+            <div class="macro-val" id="mF" style="color:#fb923c">0g</div>
+            <div class="macro-key">Masti</div>
+            <div class="macro-bar"><div class="macro-fill" id="mFb" style="background:#fb923c;width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Water -->
+      <div class="water-card">
+        <div class="water-hdr">
+          <div class="water-left">
+            <span style="font-size:20px">💧</span>
+            <div>
+              <div class="water-amt" id="waterAmt">0 ml</div>
+              <div class="water-goal-txt" id="waterGoalTxt">cilj: 2500 ml</div>
+            </div>
+          </div>
+          <div class="icon-btn" onclick="resetWater()">↺</div>
+        </div>
+        <div class="water-glasses" id="waterGlasses"></div>
+        <div class="water-track"><div class="water-fill" id="waterFill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Food log -->
+      <div class="card">
+        <div class="food-log-hdr">
+          <div class="food-log-title">🍽️ Što sam pojeo danas</div>
+          <div class="food-log-total" id="foodTotal">0 kcal</div>
+        </div>
+
+        <div id="foodList"></div>
+
+        <!-- Add row -->
+        <div class="add-food-row">
+          <input class="add-food-input" id="foodInput" placeholder="Upiši hranu (npr. banana, 100g piletine)..." autocomplete="off">
+          <div class="add-btn-grp">
+            <button class="quick-btn btn-ai" id="aiBtnMain" onclick="aiEstimate()">🤖 AI</button>
+            <button class="quick-btn btn-manual" onclick="toggleManual()">✏️</button>
+          </div>
+        </div>
+
+        <!-- Manual entry -->
+        <div class="manual-entry" id="manualEntry">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Ručni unos</div>
+          <div class="manual-grid">
+            <div>
+              <div class="m-label">Naziv</div>
+              <input class="m-input" id="mName" placeholder="npr. Jogurt">
+            </div>
+            <div>
+              <div class="m-label">Kalorije (kcal)</div>
+              <input class="m-input" type="number" id="mCal" placeholder="0">
+            </div>
+          </div>
+          <div class="manual-grid four">
+            <div>
+              <div class="m-label">Proteini (g)</div>
+              <input class="m-input" type="number" id="mProt" placeholder="0">
+            </div>
+            <div>
+              <div class="m-label">Ugljikohidrati (g)</div>
+              <input class="m-input" type="number" id="mCarb" placeholder="0">
+            </div>
+            <div>
+              <div class="m-label">Masti (g)</div>
+              <input class="m-input" type="number" id="mFat" placeholder="0">
+            </div>
+            <div>
+              <div class="m-label">Vlakna (g)</div>
+              <input class="m-input" type="number" id="mFiber" placeholder="0">
+            </div>
+          </div>
+          <div class="m-btns">
+            <button class="m-cancel" onclick="toggleManual()">Odustani</button>
+            <button class="m-confirm" onclick="addManual()">Dodaj</button>
+          </div>
+        </div>
+
+        <!-- AI result -->
+        <div id="aiResult"></div>
+
+        <!-- Favorites -->
+        <div id="favsSection" style="margin-top:10px;display:none">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:5px">⭐ Favoriti</div>
+          <div class="fav-chips" id="favChips"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEIGHT -->
+    <div class="page" id="page-weight">
+      <div class="card">
+        <div class="card-title">Dodaj mjerenje</div>
+        <div class="w-input-row">
+          <input class="w-input" id="wInput" type="number" step="0.1" placeholder="Težina (kg)" min="30" max="400">
+          <button class="prim-btn" onclick="addWeight()">Dodaj</button>
+        </div>
+      </div>
+      <div class="card" id="wChartCard" style="display:none">
+        <div class="card-title">Graf napretka</div>
+        <div class="chart-wrap"><canvas id="wChart"></canvas></div>
+        <div class="sec-div"></div>
+        <div id="wStats"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Povijest mjerenja</div>
+        <div id="wList"><div class="empty-log">Još nema mjerenja ⚖️</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="set-section">
+        <div class="set-lbl">Osobni podaci</div>
+        <div class="set-row"><span class="set-row-lbl">Dob</span><input class="set-inp" type="number" id="sAge" placeholder="30" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Visina (cm)</span><input class="set-inp" type="number" id="sHeight" placeholder="175" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Spol</span>
+          <select class="set-sel" id="sGender" onchange="saveSettings()"><option value="m">Muški</option><option value="f">Ženski</option></select>
+        </div>
+        <div class="set-row"><span class="set-row-lbl">Aktivnost</span>
+          <select class="set-sel" id="sActivity" onchange="saveSettings()">
+            <option value="1.2">Sjedilački</option>
+            <option value="1.375">Malo aktivan</option>
+            <option value="1.55">Umjereno aktivan</option>
+            <option value="1.725">Jako aktivan</option>
+            <option value="1.9">Sportaš</option>
+          </select>
+        </div>
+      </div>
+      <div class="set-section">
+        <div class="set-lbl">Dnevni ciljevi</div>
+        <div class="set-row"><span class="set-row-lbl">Kalorije (kcal)</span><input class="set-inp" type="number" id="sCalGoal" placeholder="2000" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Proteini (g)</span><input class="set-inp" type="number" id="sProtGoal" placeholder="150" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Ugljikohidrati (g)</span><input class="set-inp" type="number" id="sCarbGoal" placeholder="250" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Masti (g)</span><input class="set-inp" type="number" id="sFatGoal" placeholder="65" onchange="saveSettings()"></div>
+        <div class="set-row"><span class="set-row-lbl">Voda (ml)</span><input class="set-inp" type="number" id="sWaterGoal" placeholder="2500" onchange="saveSettings()"></div>
+      </div>
+      <div class="set-section">
+        <div class="set-lbl">BMR kalkulator</div>
+        <div class="card" style="margin:0">
+          <div id="bmrOut" style="font-size:13px;color:var(--text2)">Unesi osobne podatke i dodaj mjerenje težine.</div>
+          <button class="prim-btn" style="margin-top:10px;width:100%" onclick="calcBMR()">Izračunaj BMR / TDEE</button>
+        </div>
+      </div>
+      <div class="set-section">
+        <div class="set-lbl">Omiljene namirnice</div>
+        <div class="card" style="margin:0">
+          <div id="favsList"></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Spremi iz AI procjene → pojavljuju se na početnom zaslonu</div>
+        </div>
+      </div>
+      <div class="set-section">
+        <div class="set-lbl">Podaci</div>
+        <div class="set-row" style="cursor:pointer" onclick="exportData()"><span class="set-row-lbl">📤 Izvezi JSON</span><span style="color:var(--accent2)">→</span></div>
+        <div class="set-row" style="cursor:pointer" onclick="clearDay()"><span class="set-row-lbl" style="color:var(--orange)">🗑️ Očisti danas</span><span style="color:var(--accent2)">→</span></div>
+        <div class="set-row" style="cursor:pointer" onclick="clearAll()"><span class="set-row-lbl" style="color:var(--red)">⚠️ Izbriši sve</span><span style="color:var(--accent2)">→</span></div>
+      </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div class="page" id="page-weekly">
+      <div class="card">
+        <div class="card-title">Ovaj tjedan</div>
+        <div class="week-grid" id="weekGrid"></div>
+        <div class="sec-div"></div>
+        <div id="weekStats"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kalorije po danima</div>
+        <div class="chart-wrap"><canvas id="weekChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prosjeci</div>
+        <div id="weekAvg"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <nav class="nav">
+    <button class="nav-item active" onclick="showPage('home')" id="nav-home">
+      <div class="nav-icon">🏠</div><span class="nav-label">Danas</span>
+    </button>
+    <button class="nav-item" onclick="showPage('weight')" id="nav-weight">
+      <div class="nav-icon">⚖️</div><span class="nav-label">Težina</span>
+    </button>
+    <button class="nav-item" onclick="showPage('settings')" id="nav-settings">
+      <div class="nav-icon">⚙️</div><span class="nav-label">Profil</span>
+    </button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let S = {
+  settings:{ calGoal:2000,protGoal:150,carbGoal:250,fatGoal:65,waterGoal:2500,age:'',height:'',gender:'m',activity:'1.55' },
+  logs:{},      // "YYYY-MM-DD": { items:[], water:0 }
+  weights:[],   // [{date,kg}]
+  favorites:[]  // [{name,cal,prot,carb,fat}]
+};
+let pendingAI = null;
+
+function todayKey(){ return new Date().toISOString().split('T')[0]; }
+function todayLog(){
+  const k=todayKey();
+  if(!S.logs[k]) S.logs[k]={items:[],water:0};
+  return S.logs[k];
+}
+
+function save(){ try{ localStorage.setItem('nf2',JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const r=localStorage.getItem('nf2'); if(r) S=Object.assign(S,JSON.parse(r)); }catch(e){} }
+
+// ── BOOT ──────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  load();
+  setTimeout(()=>{
+    const sp=document.getElementById('splash');
+    sp.classList.add('hide');
+    setTimeout(()=>{
+      sp.style.display='none';
+      document.getElementById('app').classList.add('v');
+      init();
+    },500);
+  },1900);
+});
+
+function init(){
+  const d=new Date();
+  const days=['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'];
+  const mon=['sij','velj','ožu','tra','svi','lip','srp','kol','ruj','lis','stu','pro'];
+  document.getElementById('hdrDate').textContent=`${days[d.getDay()]}, ${d.getDate()}. ${mon[d.getMonth()]}`;
+  renderHome();
+  renderWeightPage();
+  loadSettings();
+  renderFavsSection();
+}
+
+// ── NAV ───────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const ne=document.getElementById('nav-'+name);
+  if(ne) ne.classList.add('active');
+  if(name==='home') renderHome();
+  if(name==='weight') renderWeightPage();
+  if(name==='weekly') renderWeekly();
+  if(name==='settings'){ loadSettings(); renderFavsSettings(); }
+}
+
+// ── HOME ──────────────────────────────────────────────
+function renderHome(){
+  const log=todayLog(), s=S.settings;
+  let tc=0,tp=0,tcarb=0,tf=0;
+  log.items.forEach(i=>{ tc+=i.cal||0; tp+=i.prot||0; tcarb+=i.carb||0; tf+=i.fat||0; });
+
+  // Ring
+  const pct=Math.min(tc/s.calGoal,1);
+  document.getElementById('ringNum').textContent=Math.round(tc);
+  document.getElementById('ringRem').textContent=`ostalo: ${Math.max(0,s.calGoal-Math.round(tc))} kcal`;
+  const ring=document.getElementById('calRing');
+  ring.style.strokeDashoffset=440-(440*pct);
+  ring.setAttribute('stroke', tc>s.calGoal*1.05?'#f87171': tc>s.calGoal*0.9?'#34d399':'url(#rg)');
+
+  // Macros
+  document.getElementById('mP').textContent=Math.round(tp)+'g';
+  document.getElementById('mC').textContent=Math.round(tcarb)+'g';
+  document.getElementById('mF').textContent=Math.round(tf)+'g';
+  document.getElementById('mPb').style.width=Math.min(100,tp/s.protGoal*100)+'%';
+  document.getElementById('mCb').style.width=Math.min(100,tcarb/s.carbGoal*100)+'%';
+  document.getElementById('mFb').style.width=Math.min(100,tf/s.fatGoal*100)+'%';
+
+  document.getElementById('foodTotal').textContent=Math.round(tc)+' kcal';
+
+  renderWater(log);
+  renderFoodList(log);
+  renderFavsSection();
+}
+
+function renderWater(log){
+  const wg=S.settings.waterGoal, w=log.water||0;
+  const gs=250, total=Math.ceil(wg/gs), filled=Math.floor(w/gs);
+  document.getElementById('waterAmt').textContent=w+' ml';
+  document.getElementById('waterGoalTxt').textContent='cilj: '+wg+' ml';
+  let h='';
+  for(let i=0;i<total;i++) h+=`<div class="wg${i<filled?' on':''}" onclick="tapWater(${i})">💧</div>`;
+  document.getElementById('waterGlasses').innerHTML=h;
+  document.getElementById('waterFill').style.width=Math.min(100,w/wg*100)+'%';
+}
+
+function tapWater(idx){
+  const log=todayLog(), gs=250, filled=Math.floor((log.water||0)/gs);
+  log.water = idx<filled ? idx*gs : (idx+1)*gs;
+  save(); renderWater(log);
+  showToast('💧 '+log.water+' ml');
+}
+function resetWater(){ todayLog().water=0; save(); renderWater(todayLog()); showToast('Voda resetirana'); }
+
+function renderFoodList(log){
+  const el=document.getElementById('foodList');
+  if(!log.items.length){
+    el.innerHTML='<div class="empty-log">Još ništa nisi unio 🍽️<br>Dodaj hranu ispod!</div>';
+    return;
+  }
+  el.innerHTML=log.items.map((item,i)=>`
+    <div class="food-item">
+      <div class="food-item-left">
+        <div class="food-name">${item.name}</div>
+        <div class="food-macros">P: ${item.prot||0}g · U: ${item.carb||0}g · M: ${item.fat||0}g${item.fiber?' · Vlakna: '+item.fiber+'g':''}</div>
+      </div>
+      <div class="food-item-right">
+        <div class="food-cal">${Math.round(item.cal)} kcal</div>
+        <div class="del-btn" onclick="delFood(${i})">✕</div>
+      </div>
+    </div>`).join('');
+}
+
+function delFood(i){ todayLog().items.splice(i,1); save(); renderHome(); showToast('Obrisano'); }
+
+function addFood(item){
+  todayLog().items.push(item);
+  save(); renderHome();
+  document.getElementById('aiResult').innerHTML='';
+  document.getElementById('foodInput').value='';
+  pendingAI=null;
+  showToast('✅ Dodano: '+item.name);
+}
+
+// ── MANUAL ENTRY ──────────────────────────────────────
+function toggleManual(){
+  const el=document.getElementById('manualEntry');
+  el.classList.toggle('open');
+  if(el.classList.contains('open')){
+    const txt=document.getElementById('foodInput').value.trim();
+    if(txt) document.getElementById('mName').value=txt;
+    document.getElementById('mName').focus();
+  }
+}
+
+function addManual(){
+  const name=document.getElementById('mName').value.trim();
+  if(!name){ showToast('Upiši naziv!'); return; }
+  addFood({
+    name, 
+    cal:parseFloat(document.getElementById('mCal').value)||0,
+    prot:parseFloat(document.getElementById('mProt').value)||0,
+    carb:parseFloat(document.getElementById('mCarb').value)||0,
+    fat:parseFloat(document.getElementById('mFat').value)||0,
+    fiber:parseFloat(document.getElementById('mFiber').value)||0,
+  });
+  document.getElementById('mName').value='';
+  document.getElementById('mCal').value='';
+  document.getElementById('mProt').value='';
+  document.getElementById('mCarb').value='';
+  document.getElementById('mFat').value='';
+  document.getElementById('mFiber').value='';
+  document.getElementById('manualEntry').classList.remove('open');
+}
+
+// ── AI ESTIMATE ───────────────────────────────────────
+async function aiEstimate(){
+  const txt=document.getElementById('foodInput').value.trim();
+  if(!txt){ showToast('Upiši što si pojeo!'); return; }
+
+  const resEl=document.getElementById('aiResult');
+  const btn=document.getElementById('aiBtnMain');
+  btn.disabled=true;
+  resEl.innerHTML=`<div class="ai-loading"><div class="dots"><span></span><span></span><span></span></div> AI procjenjuje...</div>`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        messages:[{role:'user',content:`Ti si nutricionistički asistent. Korisnik je upisao: "${txt}"
+
+Procijeni nutritivnu vrijednost. Vrati SAMO JSON bez ikakvog teksta oko njega:
+{"name":"naziv na hrvatskom","cal":broj,"prot":broj,"carb":broj,"fat":broj,"fiber":broj,"sugar":broj,"sodium":broj,"note":"kratka napomena o porciji"}
+
+Procijeni razumnu porciju ako nije navedena. Budi precizan.`}]
+      })
+    });
+    const data=await resp.json();
+    const raw=data.content?.[0]?.text||'';
+    const jm=raw.match(/\{[\s\S]*\}/);
+    if(!jm) throw new Error('no json');
+    const food=JSON.parse(jm[0]);
+    pendingAI=food;
+
+    resEl.innerHTML=`
+      <div class="ai-result-inline">
+        <div class="ai-res-name">🤖 AI procjena: ${food.name}</div>
+        <div class="ai-res-grid">
+          <div class="ai-res-cell"><div class="ai-res-val" style="color:#a78bfa">${Math.round(food.cal)}</div><div class="ai-res-key">kcal</div></div>
+          <div class="ai-res-cell"><div class="ai-res-val" style="color:#34d399">${Math.round(food.prot)}g</div><div class="ai-res-key">Proteini</div></div>
+          <div class="ai-res-cell"><div class="ai-res-val" style="color:#38bdf8">${Math.round(food.carb)}g</div><div class="ai-res-key">Ugljikohidrati</div></div>
+          <div class="ai-res-cell"><div class="ai-res-val" style="color:#fb923c">${Math.round(food.fat)}g</div><div class="ai-res-key">Masti</div></div>
+          ${food.fiber?`<div class="ai-res-cell"><div class="ai-res-val">${Math.round(food.fiber)}g</div><div class="ai-res-key">Vlakna</div></div>`:''}
+          ${food.sugar?`<div class="ai-res-cell"><div class="ai-res-val">${Math.round(food.sugar)}g</div><div class="ai-res-key">Šećeri</div></div>`:''}
+          ${food.sodium?`<div class="ai-res-cell"><div class="ai-res-val">${Math.round(food.sodium)}mg</div><div class="ai-res-key">Natrij</div></div>`:''}
+        </div>
+        ${food.note?`<div class="ai-res-note">ℹ️ ${food.note}</div>`:''}
+        <div class="ai-res-btns">
+          <button class="ai-res-btn add" onclick="addFood(pendingAI)">+ Dodaj u dnevnik</button>
+          <button class="ai-res-btn fav" onclick="saveFav()">⭐ Favorit</button>
+          <button class="ai-res-btn disc" onclick="discardAI()">✕</button>
+        </div>
+      </div>`;
+  }catch(e){
+    resEl.innerHTML=`<div class="ai-loading" style="color:var(--red)">❌ Greška — provjeri internet i pokušaj ponovo</div>`;
+  }
+  btn.disabled=false;
+}
+
+function discardAI(){ document.getElementById('aiResult').innerHTML=''; pendingAI=null; }
+
+function saveFav(){
+  if(!pendingAI) return;
+  if(!S.favorites.find(f=>f.name===pendingAI.name)){
+    S.favorites.push({name:pendingAI.name,cal:pendingAI.cal,prot:pendingAI.prot,carb:pendingAI.carb,fat:pendingAI.fat});
+    save();
+  }
+  showToast('⭐ Spremneno u favourite: '+pendingAI.name);
+  renderFavsSection();
+}
+
+function renderFavsSection(){
+  const el=document.getElementById('favsSection');
+  const chips=document.getElementById('favChips');
+  if(!S.favorites.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  chips.innerHTML=S.favorites.map((f,i)=>
+    `<div class="fav-chip" onclick="addFromFav(${i})">⭐ ${f.name} <span class="fav-cal">${Math.round(f.cal)} kcal</span></div>`
+  ).join('');
+}
+
+function addFromFav(i){ addFood({...S.favorites[i]}); }
+
+// ── ENTER KEY ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('foodInput')?.addEventListener('keydown',e=>{ if(e.key==='Enter') aiEstimate(); });
+});
+
+// ── WEIGHT ────────────────────────────────────────────
+function addWeight(){
+  const v=parseFloat(document.getElementById('wInput').value);
+  if(!v||v<20||v>400){ showToast('Upiši ispravnu težinu'); return; }
+  S.weights=S.weights.filter(w=>w.date!==todayKey());
+  S.weights.push({date:todayKey(),kg:v});
+  S.weights.sort((a,b)=>a.date.localeCompare(b.date));
+  save();
+  document.getElementById('wInput').value='';
+  renderWeightPage();
+  showToast('⚖️ '+v+' kg zabilježeno');
+}
+
+function renderWeightPage(){
+  const ws=S.weights, lEl=document.getElementById('wList'), cc=document.getElementById('wChartCard');
+  if(!ws.length){ lEl.innerHTML='<div class="empty-log">Još nema mjerenja ⚖️</div>'; cc.style.display='none'; return; }
+  cc.style.display='block';
+  const rev=[...ws].reverse();
+  lEl.innerHTML=rev.map((w,i)=>{
+    const prev=rev[i+1];
+    let delta='';
+    if(prev){ const d=w.kg-prev.kg; const s=d>0?'+':''; const c=d>0?'var(--red)':d<0?'var(--green)':'var(--text2)'; delta=`<div class="w-delta" style="color:${c}">${s}${d.toFixed(1)} kg</div>`; }
+    return `<div class="w-entry"><div><div class="w-val">${w.kg} kg</div><div class="w-date">${fmtDate(w.date)}</div></div>${delta}</div>`;
+  }).join('');
+  const kgs=ws.map(w=>w.kg);
+  const first=ws[0].kg, last=ws[ws.length-1].kg, total=last-first;
+  document.getElementById('wStats').innerHTML=`
+    <div class="stat-row"><span class="stat-lbl">Početna težina</span><span class="stat-val">${first} kg</span></div>
+    <div class="stat-row"><span class="stat-lbl">Trenutna</span><span class="stat-val">${last} kg</span></div>
+    <div class="stat-row"><span class="stat-lbl">Promjena</span><span class="stat-val" style="color:${total<=0?'var(--green)':'var(--red)'}">${total>0?'+':''}${total.toFixed(1)} kg</span></div>
+    <div class="stat-row"><span class="stat-lbl">Min / Max</span><span class="stat-val">${Math.min(...kgs)} / ${Math.max(...kgs)} kg</span></div>`;
+  drawWeightChart(ws);
+}
+
+function drawWeightChart(ws){
+  const cv=document.getElementById('wChart'), ctx=cv.getContext('2d');
+  const W=cv.offsetWidth||300, H=155;
+  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio; ctx.scale(devicePixelRatio,devicePixelRatio);
+  const kgs=ws.map(w=>w.kg), minV=Math.min(...kgs)-1, maxV=Math.max(...kgs)+1;
+  const pad={l:38,r:8,t:8,b:28}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(cH/4)*i;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle='#606070'; ctx.font='10px Inter'; ctx.textAlign='right';
+    ctx.fillText((maxV-((maxV-minV)/4)*i).toFixed(1),pad.l-3,y+4);
+  }
+  if(ws.length<2){ return; }
+  const pts=ws.map((w,i)=>({x:pad.l+(i/(ws.length-1))*cW, y:pad.t+(1-(w.kg-minV)/(maxV-minV))*cH}));
+  const gr=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+  gr.addColorStop(0,'rgba(108,99,255,.3)'); gr.addColorStop(1,'rgba(108,99,255,0)');
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pad.t+cH);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y)); ctx.lineTo(pts[pts.length-1].x,pad.t+cH);
+  ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
+  ctx.beginPath(); ctx.strokeStyle='#a78bfa'; ctx.lineWidth=2.5;
+  pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+  pts.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle='#a78bfa'; ctx.fill(); ctx.strokeStyle='#0f0f14'; ctx.lineWidth=2; ctx.stroke(); });
+  const step=Math.max(1,Math.floor(ws.length/4));
+  ctx.fillStyle='#606070'; ctx.font='10px Inter'; ctx.textAlign='center';
+  ws.forEach((w,i)=>{ if(i%step===0||i===ws.length-1) ctx.fillText(fmtDateS(w.date),pts[i].x,H-5); });
+}
+
+// ── WEEKLY ────────────────────────────────────────────
+function renderWeekly(){
+  const today=new Date(), days=[];
+  for(let i=6;i>=0;i--){ const d=new Date(today); d.setDate(d.getDate()-i); days.push(d); }
+  const dn=['Ned','Pon','Uto','Sri','Čet','Pet','Sub'];
+  const s=S.settings;
+  const cals=days.map(d=>{ const k=d.toISOString().split('T')[0]; const l=S.logs[k]; return l?l.items.reduce((sum,m)=>sum+(m.cal||0),0):0; });
+  const maxCal=Math.max(...cals,s.calGoal)||2000;
+
+  document.getElementById('weekGrid').innerHTML=days.map((d,i)=>{
+    const isT=i===6, cal=Math.round(cals[i]), pct=Math.min(100,(cals[i]/s.calGoal)*100);
+    const col=cals[i]>s.calGoal*1.05?'#f87171':cals[i]>s.calGoal*0.9?'#34d399':'#6c63ff';
+    return `<div class="wday${isT?' today':''}"><div class="wday-name">${dn[d.getDay()]}</div><div class="wday-cal">${cal||'—'}</div><div class="wday-bar"><div class="wday-fill" style="height:${pct}%;background:${col}"></div></div></div>`;
+  }).join('');
+
+  const active=cals.filter(c=>c>0).length;
+  const avg=active?Math.round(cals.reduce((a,b)=>a+b,0)/active):0;
+  document.getElementById('weekStats').innerHTML=`
+    <div class="stat-row"><span class="stat-lbl">Aktivni dani</span><span class="stat-val">${active}/7</span></div>
+    <div class="stat-row"><span class="stat-lbl">Ukupno (tjedan)</span><span class="stat-val">${Math.round(cals.reduce((a,b)=>a+b,0))} kcal</span></div>
+    <div class="stat-row"><span class="stat-lbl">Prosjek / dan</span><span class="stat-val">${avg} kcal</span></div>`;
+
+  drawWeekChart(days,cals,s.calGoal);
+
+  const allItems=days.flatMap(d=>{ const k=d.toISOString().split('T')[0]; return (S.logs[k]?.items||[]); });
+  const aP=active?Math.round(allItems.reduce((s,m)=>s+(m.prot||0),0)/active):0;
+  const aC=active?Math.round(allItems.reduce((s,m)=>s+(m.carb||0),0)/active):0;
+  const aF=active?Math.round(allItems.reduce((s,m)=>s+(m.fat||0),0)/active):0;
+  const aW=active?Math.round(days.reduce((sum,d)=>{ const k=d.toISOString().split('T')[0]; return sum+(S.logs[k]?.water||0); },0)/active):0;
+  document.getElementById('weekAvg').innerHTML=`
+    <div class="stat-row"><span class="stat-lbl">Kalorije / dan</span><span class="stat-val">${avg} kcal</span></div>
+    <div class="stat-row"><span class="stat-lbl">Proteini / dan</span><span class="stat-val">${aP}g</span></div>
+    <div class="stat-row"><span class="stat-lbl">Ugljikohidrati / dan</span><span class="stat-val">${aC}g</span></div>
+    <div class="stat-row"><span class="stat-lbl">Masti / dan</span><span class="stat-val">${aF}g</span></div>
+    <div class="stat-row"><span class="stat-lbl">Voda / dan</span><span class="stat-val">${aW} ml</span></div>`;
+}
+
+function drawWeekChart(days,cals,goal){
+  const cv=document.getElementById('weekChart'), ctx=cv.getContext('2d');
+  const W=cv.offsetWidth||300, H=155;
+  cv.width=W*devicePixelRatio; cv.height=H*devicePixelRatio; ctx.scale(devicePixelRatio,devicePixelRatio);
+  const dn=['Ned','Pon','Uto','Sri','Čet','Pet','Sub'];
+  const pad={l:38,r:8,t:8,b:28}, cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const maxV=Math.max(...cals,goal)*1.1||2200;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){ const y=pad.t+(cH/3)*i; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke(); ctx.fillStyle='#606070'; ctx.font='10px Inter'; ctx.textAlign='right'; ctx.fillText(Math.round(maxV-(maxV/3)*i),pad.l-3,y+4); }
+  const gY=pad.t+(1-goal/maxV)*cH;
+  ctx.setLineDash([4,4]); ctx.strokeStyle='#34d399'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,gY); ctx.lineTo(W-pad.r,gY); ctx.stroke(); ctx.setLineDash([]);
+  const bW=(cW/7)*.6, bG=cW/7;
+  cals.forEach((cal,i)=>{
+    if(!cal) return;
+    const x=pad.l+bG*i+(bG-bW)/2, h=(cal/maxV)*cH, y=pad.t+cH-h;
+    const col=cal>goal*1.05?'#f87171':cal>goal*0.9?'#34d399':'#6c63ff';
+    const gr=ctx.createLinearGradient(0,y,0,pad.t+cH); gr.addColorStop(0,col); gr.addColorStop(1,col+'40');
+    ctx.fillStyle=gr;
+    ctx.beginPath(); ctx.moveTo(x+4,y); ctx.lineTo(x+bW-4,y); ctx.quadraticCurveTo(x+bW,y,x+bW,y+4); ctx.lineTo(x+bW,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+4); ctx.quadraticCurveTo(x,y,x+4,y); ctx.fill();
+  });
+  ctx.textAlign='center';
+  days.forEach((d,i)=>{ const x=pad.l+bG*i+bG/2; ctx.fillStyle=i===6?'#a78bfa':'#606070'; ctx.font='10px Inter'; ctx.fillText(dn[d.getDay()],x,H-5); });
+}
+
+// ── SETTINGS ──────────────────────────────────────────
+function saveSettings(){
+  const s=S.settings;
+  s.calGoal=parseInt(document.getElementById('sCalGoal').value)||2000;
+  s.protGoal=parseInt(document.getElementById('sProtGoal').value)||150;
+  s.carbGoal=parseInt(document.getElementById('sCarbGoal').value)||250;
+  s.fatGoal=parseInt(document.getElementById('sFatGoal').value)||65;
+  s.waterGoal=parseInt(document.getElementById('sWaterGoal').value)||2500;
+  s.age=document.getElementById('sAge').value;
+  s.height=document.getElementById('sHeight').value;
+  s.gender=document.getElementById('sGender').value;
+  s.activity=document.getElementById('sActivity').value;
+  save();
+}
+function loadSettings(){
+  const s=S.settings;
+  document.getElementById('sCalGoal').value=s.calGoal;
+  document.getElementById('sProtGoal').value=s.protGoal;
+  document.getElementById('sCarbGoal').value=s.carbGoal;
+  document.getElementById('sFatGoal').value=s.fatGoal;
+  document.getElementById('sWaterGoal').value=s.waterGoal;
+  document.getElementById('sAge').value=s.age||'';
+  document.getElementById('sHeight').value=s.height||'';
+  document.getElementById('sGender').value=s.gender||'m';
+  document.getElementById('sActivity').value=s.activity||'1.55';
+}
+function calcBMR(){
+  const s=S.settings, age=parseInt(s.age), h=parseInt(s.height), ws=S.weights;
+  if(!age||!h||!ws.length){ document.getElementById('bmrOut').innerHTML='⚠️ Unesi dob, visinu i dodaj mjerenje težine.'; return; }
+  const w=ws[ws.length-1].kg;
+  const bmr=s.gender==='m'?88.36+(13.4*w)+(4.8*h)-(5.7*age):447.6+(9.2*w)+(3.1*h)-(4.3*age);
+  const tdee=Math.round(bmr*parseFloat(s.activity));
+  document.getElementById('bmrOut').innerHTML=`
+    <div class="stat-row"><span class="stat-lbl">BMR</span><span class="stat-val">${Math.round(bmr)} kcal</span></div>
+    <div class="stat-row"><span class="stat-lbl">TDEE (ukupna potrošnja)</span><span class="stat-val">${tdee} kcal</span></div>
+    <div class="stat-row"><span class="stat-lbl">Za mršavljenje (-500)</span><span class="stat-val">${tdee-500} kcal</span></div>
+    <div class="stat-row"><span class="stat-lbl">Za debljanje (+500)</span><span class="stat-val">${tdee+500} kcal</span></div>`;
+}
+function renderFavsSettings(){
+  const el=document.getElementById('favsList');
+  if(!S.favorites.length){ el.innerHTML='<div style="font-size:12px;color:var(--text3)">Nema favorita</div>'; return; }
+  el.innerHTML=S.favorites.map((f,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">⭐ ${f.name} <span style="color:var(--text2)">(${Math.round(f.cal)} kcal)</span></span>
+      <span style="color:var(--red);cursor:pointer;font-size:13px" onclick="deleteFav(${i})">✕</span>
+    </div>`).join('');
+}
+function deleteFav(i){ S.favorites.splice(i,1); save(); renderFavsSettings(); renderFavsSection(); showToast('Favorit uklonjen'); }
+
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='NutriFlow_'+todayKey()+'.json'; a.click();
+  showToast('📤 Podaci izvezeni');
+}
+function clearDay(){ if(!confirm('Obrisati sve unose za danas?')) return; const k=todayKey(); S.logs[k]={items:[],water:0}; save(); renderHome(); showToast('Danas obrisan'); }
+function clearAll(){ if(!confirm('Obrisati SVE podatke?')) return; S.logs={}; S.weights=[]; S.favorites=[]; save(); renderHome(); renderWeightPage(); showToast('Sve obrisano'); }
+
+// ── UTILS ─────────────────────────────────────────────
+function fmtDate(ds){ const d=new Date(ds+'T12:00:00'); return d.toLocaleDateString('hr-HR',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDateS(ds){ const d=new Date(ds+'T12:00:00'); return d.toLocaleDateString('hr-HR',{day:'numeric',month:'numeric'}); }
+
+let _tt;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2500); }
+</script>
+</body>
+</html>
